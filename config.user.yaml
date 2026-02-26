@@ -1,0 +1,94 @@
+# ==============================================================================
+# 配置文件 (Config.yaml) - 单细胞 RNA-seq 分析流程
+# ==============================================================================
+
+# 注意：建议所有路径均使用绝对路径 (Absolute Paths)，以避免运行时的路径混淆。
+
+# ------------------------------------------------------------------------------
+# 1. 样本路径配置 (Samples)
+# ------------------------------------------------------------------------------
+# 格式: 样本名称: "10x 输出目录的绝对路径"
+# 10x 目录应包含: matrix.mtx.gz, features.tsv.gz, barcodes.tsv.gz
+samples:
+  D0: "/home/user/Pan Chongshi/Projects/NK_Expansion_sc/Files/D0"
+  D7: "/home/user/Pan Chongshi/Projects/NK_Expansion_sc/Files/D7"
+  D14: "/home/user/Pan Chongshi/Projects/NK_Expansion_sc/Files/D14"
+  D21: "/home/user/Pan Chongshi/Projects/NK_Expansion_sc/Files/D21"
+
+# ------------------------------------------------------------------------------
+# 2. 样本元数据 (Sample Metadata)
+# ------------------------------------------------------------------------------
+# 用于定义每个样本的分组、时间点或其他实验条件。
+# 键名必须与 `samples` 中的样本名称严格一致。
+sample_metadata:
+  D0:
+    time: "Day0"
+  D7:
+    time: "Day7"
+  D14:
+    time: "Day14"
+  D21:
+    time: "Day21"
+
+# ------------------------------------------------------------------------------
+# 3. 输出目录配置 (Output Directories)
+# ------------------------------------------------------------------------------
+# 定义所有输出文件的存放位置。建议填写绝对路径。
+directories:
+  raw_h5ad: "results/data/single_sample_raw"  # 单样本原始 H5AD
+  qc_h5ad:  "results/data/single_sample_qc"   # 单样本 QC 后 H5AD
+  merged:   "results/data/merged"             # 合并后的数据
+  plots:    "results/plots"                   # 绘图输出 (QC, UMAP 等)
+  tables:   "results/tables"                  # 表格输出 (统计信息等)
+  logs:     "results/logs"                    # 日志文件
+  report:   "results/report"                  # HTML 分析报告
+
+# ------------------------------------------------------------------------------
+# 4. 过滤参数 (Filtering)
+# ------------------------------------------------------------------------------
+# 用于 `02_qc_filter_single.py` 脚本中的质量控制步骤。
+filtering:
+  min_genes: 200          # 每个细胞最少检测到的基因数
+  max_mt_pct: 10.0        # 允许的最大线粒体基因比例 (%)
+  min_cells_per_gene: 3   # 每个基因最少在多少个细胞中表达才被保留
+
+  # Doublet (双胞) 检测参数 - 使用 Scrublet
+  doublet_rate: 0.06      # 预期的双胞率 (Expected doublet rate), 通常 10x 数据约为 0.05 - 0.10
+  sim_doublet_ratio: 2.0  # 模拟双胞的数量相对于观测细胞数的倍数
+  n_prin_comps: 30        # Scrublet 内部 PCA 使用的主成分数
+
+# ------------------------------------------------------------------------------
+# 5. 基因模式匹配 (Gene Patterns)
+# ------------------------------------------------------------------------------
+# 用于在高变基因 (HVG) 选择后，剔除特定类型的基因。
+gene_patterns:
+  mt: "^MT-"                     # 线粒体基因 (Mouse: ^MT-, Human: ^MT-)
+  rp: "^RP[SL]"                  # 核糖体蛋白基因 (Ribosomal Protein)
+  ncrna: "^[A-Z][A-Z][0-9].*\\.[0-9]" # ncRNA / 未定性基因
+  linc: "(^LOC|LINC)[1-9]*"      # 长链非编码 RNA (LINC) 或 LOC 基因
+
+# ------------------------------------------------------------------------------
+# 6. 分析处理参数 (Processing)
+# ------------------------------------------------------------------------------
+# 用于 `03_merge_and_process.py` 脚本中的合并、归一化、降维和聚类步骤。
+processing:
+  n_top_genes: 2000       # 选择的高变基因 (HVG) 数量
+  harmony_key: "sample"   # 用于 Harmony 去批次的列名
+  resolution: 0.5         # Leiden 聚类的分辨率
+  
+  # 归一化与缩放
+  target_sum: 10000       # 归一化总计数目标
+  scale_max_value: 10.0   # Scale 数据时的最大截断值
+  
+  # 邻居图构建 (Neighbors)
+  n_neighbors: 10         # 计算 UMAP/聚类时的近邻数 (k-NN)
+
+# ------------------------------------------------------------------------------
+# 7. 差异基因分析参数 (Find Markers)
+# ------------------------------------------------------------------------------
+# 用于 `04_find_markers.py` 脚本
+find_markers:
+  groupby: "leiden"       # 进行差异分析的分组列名 (例如: leiden, group, sample)
+  method: "wilcoxon"      # 检验方法 (wilcoxon, t-test, t-test_overestim_var, logreg)
+  n_genes: 20            # 输出表格中每个组保留的基因数量
+  n_genes_plot: 5         # 绘图 (Dotplot/Matrixplot) 时每个组展示的 Top 基因数量
