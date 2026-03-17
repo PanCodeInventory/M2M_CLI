@@ -7,13 +7,18 @@
 # ------------------------------------------------------------------------------
 # 1. 样本路径配置 (Samples)
 # ------------------------------------------------------------------------------
-# 格式: 样本名称: "10x 输出目录的绝对路径"
-# 10x 目录应包含: matrix.mtx.gz, features.tsv.gz, barcodes.tsv.gz
+# 格式: 样本名称: "10x/Alevin 输出目录的绝对路径"
+# 支持 10x 格式 (matrix.mtx.gz) 或 Alevin 格式 (quants_mat.mtx)
 samples:
-  D0: "/home/user/Pan Chongshi/Projects/NK_Expansion_sc/Files/D0"
-  D7: "/home/user/Pan Chongshi/Projects/NK_Expansion_sc/Files/D7"
-  D14: "/home/user/Pan Chongshi/Projects/NK_Expansion_sc/Files/D14"
-  D21: "/home/user/Pan Chongshi/Projects/NK_Expansion_sc/Files/D21"
+  S1: "/home/user/PanChongshi/Projects/CKG/data/YW_s1/outs/filtered_feature_bc_matrix"
+  S2: "/home/user/PanChongshi/Projects/CKG/data/YW_s2/outs/filtered_feature_bc_matrix"
+  S3: "/home/user/PanChongshi/Projects/CKG/data/YW_s3/outs/filtered_feature_bc_matrix"
+  IL12_1: "/home/user/PanChongshi/Projects/CKG/data/YW_121/outs/filtered_feature_bc_matrix"
+  IL12_2: "/home/user/PanChongshi/Projects/CKG/data/YW_122/outs/filtered_feature_bc_matrix"
+  IL12_3: "/home/user/PanChongshi/Projects/CKG/data/YW_123/outs/filtered_feature_bc_matrix"
+  IL12p_1: "/home/user/PanChongshi/Projects/CKG/data/YW_12p1/outs/filtered_feature_bc_matrix"
+  IL12p_2: "/home/user/PanChongshi/Projects/CKG/data/YW_12p2/outs/filtered_feature_bc_matrix"
+  IL12p_3: "/home/user/PanChongshi/Projects/CKG/data/YW_12p3/outs/filtered_feature_bc_matrix"
 
 # ------------------------------------------------------------------------------
 # 2. 样本元数据 (Sample Metadata)
@@ -21,27 +26,36 @@ samples:
 # 用于定义每个样本的分组、时间点或其他实验条件。
 # 键名必须与 `samples` 中的样本名称严格一致。
 sample_metadata:
-  D0:
-    time: "Day0"
-  D7:
-    time: "Day7"
-  D14:
-    time: "Day14"
-  D21:
-    time: "Day21"
+  S1:
+    group: "Control"
+  S2:
+    group: "Control"
+  S3:
+    group: "Control"
+  IL12_1:
+    group: "IL12"
+  IL12_2:
+    group: "IL12"
+  IL12_3:
+    group: "IL12"
+  IL12p_1:
+    group: "IL12p"
+  IL12p_2:
+    group: "IL12p"
+  IL12p_3:
+    group: "IL12p"
 
 # ------------------------------------------------------------------------------
 # 3. 输出目录配置 (Output Directories)
 # ------------------------------------------------------------------------------
-# 定义所有输出文件的存放位置。建议填写绝对路径。
 directories:
-  raw_h5ad: "results/data/single_sample_raw"  # 单样本原始 H5AD
-  qc_h5ad:  "results/data/single_sample_qc"   # 单样本 QC 后 H5AD
-  merged:   "results/data/merged"             # 合并后的数据
-  plots:    "results/plots"                   # 绘图输出 (QC, UMAP 等)
-  tables:   "results/tables"                  # 表格输出 (统计信息等)
-  logs:     "results/logs"                    # 日志文件
-  report:   "results/report"                  # HTML 分析报告
+  raw_h5ad: "/home/user/PanChongshi/Projects/CKG/Analysis/1_Matrix2Marker/results/data/single_sample_raw"
+  qc_h5ad:  "/home/user/PanChongshi/Projects/CKG/Analysis/1_Matrix2Marker/results/data/single_sample_qc"
+  merged:   "/home/user/PanChongshi/Projects/CKG/Analysis/1_Matrix2Marker/results/data/merged"
+  plots:    "/home/user/PanChongshi/Projects/CKG/Analysis/1_Matrix2Marker/results/plots"
+  tables:   "/home/user/PanChongshi/Projects/CKG/Analysis/1_Matrix2Marker/results/tables"
+  logs:     "/home/user/PanChongshi/Projects/CKG/Analysis/1_Matrix2Marker/results/logs"
+  report:   "/home/user/PanChongshi/Projects/CKG/Analysis/1_Matrix2Marker/results/report"
 
 # ------------------------------------------------------------------------------
 # 4. 过滤参数 (Filtering)
