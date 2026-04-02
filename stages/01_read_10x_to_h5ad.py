@@ -53,6 +53,8 @@ def main():
     parser.add_argument("--output-file", required=True, help="Output path for .raw.h5ad file")
     parser.add_argument("--sample-group", default="NA", help="Sample Group (e.g. MCD, NCD)")
     parser.add_argument("--sample-time", default="NA", help="Sample Timepoint (e.g. 1w, 0w)")
+    parser.add_argument("--sample-tissue", default="NA", help="Sample Tissue (e.g. Liver, Lung)")
+    parser.add_argument("--sample-age", default="NA", help="Sample Age (e.g. Aged, Young)")
     
     args = parser.parse_args()
     
@@ -61,10 +63,12 @@ def main():
     out_path = args.output_file
     group = args.sample_group
     time_point = args.sample_time
+    tissue = args.sample_tissue
+    age = args.sample_age
 
     print(f"[{log_timestamp()}] === Processing Sample: {sample_name} ===")
     print(f"[INFO] Input Dir: {sample_dir}")
-    print(f"[INFO] Metadata: group={group}, time={time_point}")
+    print(f"[INFO] Metadata: group={group}, time={time_point}, tissue={tissue}, age={age}")
     print(f"[INFO] Output File: {out_path}")
 
     if not os.path.isdir(sample_dir):
@@ -78,7 +82,9 @@ def main():
             sample_dir=sample_dir, 
             sample_name=sample_name,
             group=group,
-            time=time_point
+            time=time_point,
+            tissue=tissue,
+            age=age
         )
         print(f"[INFO] Loaded: cells={adata.n_obs}, genes={adata.n_vars}")
 

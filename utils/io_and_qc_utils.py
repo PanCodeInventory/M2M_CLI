@@ -27,7 +27,9 @@ def load_10x_mouse(
     sample_dir: str, 
     sample_name: str,
     group: str = "NA",
-    time: str = "NA"
+    time: str = "NA",
+    tissue: str = "NA",
+    age: str = "NA"
 ) -> ad.AnnData:
     """
     从 10x 目录读取小鼠单细胞数据，返回 AnnData 对象。
@@ -37,6 +39,8 @@ def load_10x_mouse(
     - sample_name: 样本名称
     - group: 样本分组 (默认为 "NA")
     - time: 时间点 (默认为 "NA")
+    - tissue: 组织类型 (默认为 "NA")
+    - age: 年龄组 (默认为 "NA")
     """
     import pandas as pd
 
@@ -152,10 +156,12 @@ def load_10x_mouse(
     for k, v in var_dict.items():
         adata.var[k] = v
 
-    # 10）添加样本信息及 group/time 注释
+    # 10）添加样本信息及 group/time/tissue/age 注释
     adata.obs["sample"] = sample_name
     adata.obs["group"] = group
     adata.obs["time"] = time
+    adata.obs["tissue"] = tissue
+    adata.obs["age"] = age
 
     # 11）确保基因名唯一（scanpy 要求）
     adata.var_names_make_unique()

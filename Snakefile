@@ -9,13 +9,21 @@ DIR_MERGED = config["directories"]["merged"]
 DIR_PLOTS = config["directories"]["plots"]
 DIR_TABLES = config["directories"]["tables"]
 DIR_LOGS = config["directories"]["logs"]
+DIR_OPTIMIZATION = config["directories"].get("optimization", os.path.join(DIR_TABLES, "optimization"))
+
+# Python executable
+PYTHON = "/home/user/miniforge3/envs/matrix2marker/bin/python"
 
 rule all:
     input:
         f"{DIR_MERGED}/merged.processed.h5ad",
         f"{DIR_TABLES}/qc_single_summary.tsv",
-        f"{DIR_TABLES}/all_markers.csv"
+        f"{DIR_TABLES}/all_markers.csv",
+        f"{DIR_OPTIMIZATION}/optimal_params.yaml"
 
+# =============================================================================
+# Stage 1: Read 10x data
+# =============================================================================
 rule read_10x:
     input:
         lambda wildcards: config["samples"][wildcards.sample]
@@ -23,19 +31,26 @@ rule read_10x:
         f"{DIR_RAW}/{{sample}}.raw.h5ad"
     params:
         group = lambda wildcards: config.get("sample_metadata", {}).get(wildcards.sample, {}).get("group", "NA"),
-        time = lambda wildcards: config.get("sample_metadata", {}).get(wildcards.sample, {}).get("time", "NA")
+        time = lambda wildcards: config.get("sample_metadata", {}).get(wildcards.sample, {}).get("time", "NA"),
+        tissue = lambda wildcards: config.get("sample_metadata", {}).get(wildcards.sample, {}).get("tissue", "NA"),
+        age = lambda wildcards: config.get("sample_metadata", {}).get(wildcards.sample, {}).get("age", "NA")
     log:
         f"{DIR_LOGS}/read_10x/{{sample}}.log"
     shell:
         """
-        /home/user/miniforge3/envs/matrix2marker/bin/python stages/01_read_10x_to_h5ad.py \
+        {PYTHON} stages/01_read_10x_to_h5ad.py \
             --sample-name {wildcards.sample} \
             --input-dir "{input}" \
             --output-file {output} \
             --sample-group {params.group} \
-            --sample-time {params.time} > {log} 2>&1
+            --sample-time {params.time} \
+            --sample-tissue {params.tissue} \
+            --sample-age {params.age} > {log} 2>&1
         """
 
+# =============================================================================
+# Stage 2: QC and filtering
+# =============================================================================
 rule qc_filter:
     input:
         f"{DIR_RAW}/{{sample}}.raw.h5ad"
@@ -56,7 +71,7 @@ rule qc_filter:
         f"{DIR_LOGS}/qc_filter/{{sample}}.log"
     shell:
         """
-        /home/user/miniforge3/envs/matrix2marker/bin/python stages/02_qc_filter_single.py \
+        {PYTHON} stages/02_qc_filter_single.py \
             --input-h5ad {input} \
             --output-h5ad {output.h5ad} \
             --output-plot-dir {params.plot_dir} \
@@ -86,41 +101,39 @@ rule aggregate_qc_stats:
         df = pd.DataFrame(data)
         df.to_csv(output[0], sep="\t", index=False)
 
-rule merge_and_process:
+# =============================================================================
+# Stage 3: Merge and embed (no clustering)
+# =============================================================================
+rule merge_and_embed:
     input:
         expand(f"{DIR_QC}/{{sample}}.qc.h5ad", sample=SAMPLES)
     output:
         merged_raw = f"{DIR_MERGED}/merged.raw.h5ad",
-        merged_processed = f"{DIR_MERGED}/merged.processed.h5ad",
-        plot_sample = f"{DIR_PLOTS}/umap/umap_by_sample.png"
+        embedded = f"{DIR_MERGED}/merged.embedded.h5ad"
     params:
-        plot_dir = f"{DIR_PLOTS}/umap",
+        plot_dir = f"{DIR_PLOTS}/embedding",
         table_dir = DIR_TABLES,
         n_top_genes = config["processing"]["n_top_genes"],
-        resolution = config["processing"]["resolution"],
         harmony_key = config["processing"]["harmony_key"],
         target_sum = config["processing"]["target_sum"],
-        n_neighbors = config["processing"]["n_neighbors"],
         scale_max_value = config["processing"]["scale_max_value"],
         mt_pattern = config["gene_patterns"]["mt"],
         rp_pattern = config["gene_patterns"]["rp"],
         ncrna_pattern = config["gene_patterns"]["ncrna"],
         linc_pattern = config["gene_patterns"]["linc"]
     log:
-        f"{DIR_LOGS}/merge_and_process.log"
+        f"{DIR_LOGS}/merge_and_embed.log"
     shell:
         """
-        /home/user/miniforge3/envs/matrix2marker/bin/python stages/03_merge_and_process.py \
+        {PYTHON} stages/03_merge_and_embed.py \
             --input-h5ads {input} \
             --output-merged-raw {output.merged_raw} \
-            --output-merged-processed {output.merged_processed} \
+            --output-embedded {output.embedded} \
             --output-plot-dir {params.plot_dir} \
             --output-table-dir {params.table_dir} \
             --n-top-genes {params.n_top_genes} \
-            --resolution {params.resolution} \
             --harmony-key {params.harmony_key} \
             --target-sum {params.target_sum} \
-            --n-neighbors {params.n_neighbors} \
             --scale-max-value {params.scale_max_value} \
             --mt-pattern "{params.mt_pattern}" \
             --rp-pattern "{params.rp_pattern}" \
@@ -128,28 +141,62 @@ rule merge_and_process:
             --linc-pattern "{params.linc_pattern}" > {log} 2>&1
         """
 
-rule find_markers:
+# =============================================================================
+# Stage 4: Parameter optimization
+# =============================================================================
+rule optimize_clustering:
     input:
-        f"{DIR_MERGED}/merged.processed.h5ad"
+        f"{DIR_MERGED}/merged.embedded.h5ad"
     output:
-        table = f"{DIR_TABLES}/all_markers.csv",
-        plot_rank = f"{DIR_PLOTS}/markers/rank_genes_{config['find_markers']['groupby']}.png"
+        params_yaml = f"{DIR_OPTIMIZATION}/optimal_params.yaml"
     params:
-        plot_dir = f"{DIR_PLOTS}/markers",
-        groupby = config["find_markers"]["groupby"],
-        method = config["find_markers"]["method"],
-        n_genes = config["find_markers"]["n_genes"],
-        n_genes_plot = config["find_markers"]["n_genes_plot"]
+        output_dir = DIR_OPTIMIZATION,
+        resolutions = config["optimization"]["resolutions"],
+        n_neighbors_list = config["optimization"]["n_neighbors_list"],
+        skip_flag = "--skip-neighbors-test" if config["optimization"].get("skip_neighbors_test", False) else ""
     log:
-        f"{DIR_LOGS}/find_markers.log"
+        f"{DIR_LOGS}/optimize_clustering.log"
     shell:
         """
-        /home/user/miniforge3/envs/matrix2marker/bin/python stages/04_find_markers.py \
+        {PYTHON} stages/04_clustering_optimization.py \
             --input-h5ad {input} \
-            --output-table {output.table} \
+            --output-dir {params.output_dir} \
+            --output-params {output.params_yaml} \
+            --resolutions {params.resolutions} \
+            --n-neighbors-list {params.n_neighbors_list} \
+            {params.skip_flag} > {log} 2>&1
+        """
+
+# =============================================================================
+# Stage 5: Apply clustering and find markers
+# =============================================================================
+rule apply_clustering:
+    input:
+        h5ad = f"{DIR_MERGED}/merged.embedded.h5ad",
+        params_yaml = f"{DIR_OPTIMIZATION}/optimal_params.yaml"
+    output:
+        h5ad = f"{DIR_MERGED}/merged.processed.h5ad",
+        markers = f"{DIR_TABLES}/all_markers.csv"
+    params:
+        plot_dir = f"{DIR_PLOTS}/clustering",
+        table_dir = DIR_TABLES,
+        marker_groupby = config["find_markers"]["groupby"],
+        marker_method = config["find_markers"]["method"],
+        marker_n_genes = config["find_markers"]["n_genes"],
+        marker_n_genes_plot = config["find_markers"]["n_genes_plot"]
+    log:
+        f"{DIR_LOGS}/apply_clustering.log"
+    shell:
+        """
+        {PYTHON} stages/05_apply_clustering.py \
+            --input-h5ad {input.h5ad} \
+            --params-yaml {input.params_yaml} \
+            --output-h5ad {output.h5ad} \
+            --output-markers {output.markers} \
             --output-plot-dir {params.plot_dir} \
-            --groupby {params.groupby} \
-            --method {params.method} \
-            --n-genes {params.n_genes} \
-            --n-genes-plot {params.n_genes_plot} > {log} 2>&1
+            --output-table-dir {params.table_dir} \
+            --marker-groupby {params.marker_groupby} \
+            --marker-method {params.marker_method} \
+            --marker-n-genes {params.marker_n_genes} \
+            --marker-n-genes-plot {params.marker_n_genes_plot} > {log} 2>&1
         """

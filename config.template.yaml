@@ -1,0 +1,87 @@
+# ==============================================================================
+# M2M_CLI Configuration Template
+# ==============================================================================
+# Copy this file to config.my_project.yaml and edit as needed.
+
+# ------------------------------------------------------------------------------
+# 1. Sample Paths
+# ------------------------------------------------------------------------------
+# Map sample names to 10x matrix directories
+samples:
+  Sample_1: "/path/to/Sample_1_10x/"
+  Sample_2: "/path/to/Sample_2_10x/"
+
+# ------------------------------------------------------------------------------
+# 2. Sample Metadata
+# ------------------------------------------------------------------------------
+# Metadata for each sample (tissue, age, group, time)
+sample_metadata:
+  Sample_1:
+    tissue: "TissueA"
+    age: "Aged"
+    group: "GroupA"
+    time: "0w"
+  Sample_2:
+    tissue: "TissueA"
+    age: "Young"
+    group: "GroupB"
+    time: "1w"
+
+# ------------------------------------------------------------------------------
+# 3. Output Directories
+# ------------------------------------------------------------------------------
+directories:
+  raw_h5ad: "results/data/single_sample_raw"
+  qc_h5ad: "results/data/single_sample_qc"
+  merged: "results/data/merged"
+  plots: "results/plots"
+  tables: "results/tables"
+  logs: "results/logs"
+  optimization: "results/optimization"
+
+# ------------------------------------------------------------------------------
+# 4. Filtering Parameters
+# ------------------------------------------------------------------------------
+filtering:
+  min_genes: 200
+  max_mt_pct: 10.0
+  min_cells_per_gene: 3
+  doublet_rate: 0.06
+  sim_doublet_ratio: 2.0
+  n_prin_comps: 30
+
+# ------------------------------------------------------------------------------
+# 5. Gene Patterns (Mouse)
+# ------------------------------------------------------------------------------
+gene_patterns:
+  mt: "^MT-"
+  rp: "^RP[SL]"
+  ncrna: "^[A-Z][A-Z][0-9].*\\.[0-9]"
+  linc: "(^LOC|LINC)[1-9]*"
+
+# ------------------------------------------------------------------------------
+# 6. Processing Parameters
+# ------------------------------------------------------------------------------
+processing:
+  n_top_genes: 2000
+  harmony_key: "sample"
+  target_sum: 10000
+  scale_max_value: 10.0
+
+# ------------------------------------------------------------------------------
+# 7. Parameter Optimization
+# ------------------------------------------------------------------------------
+# Parameters will be optimized automatically using silhouette score
+optimization:
+  resolutions: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0, 1.2, 1.5]
+  n_neighbors_list: [5, 10, 15, 20, 30]
+  skip_neighbors_test: false
+
+# ------------------------------------------------------------------------------
+# 8. Marker Analysis
+# ------------------------------------------------------------------------------
+find_markers:
+  groupby: "leiden"
+  method: "wilcoxon"
+  n_genes: 20
+  n_genes_plot: 5

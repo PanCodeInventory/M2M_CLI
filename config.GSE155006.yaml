@@ -1,0 +1,107 @@
+# ==============================================================================
+# GSE155006 单细胞 RNA-seq 分析配置文件
+# ==============================================================================
+# 数据来源: GEO GSE155006 - 小鼠多组织年龄对比研究
+# 物种: Mouse
+
+# ------------------------------------------------------------------------------
+# 1. 样本路径配置 (Samples)
+# ------------------------------------------------------------------------------
+samples:
+  Liver_Aged: "/home/user/PanChongshi/Lab/WYD/scATAC/GSE155006_data/Liver_Aged"
+  Liver_Young: "/home/user/PanChongshi/Lab/WYD/scATAC/GSE155006_data/Liver_Young"
+  Lung_Aged: "/home/user/PanChongshi/Lab/WYD/scATAC/GSE155006_data/Lung_Aged"
+  Lung_Young: "/home/user/PanChongshi/Lab/WYD/scATAC/GSE155006_data/Lung_Young"
+  Peritoneal_cells_Aged: "/home/user/PanChongshi/Lab/WYD/scATAC/GSE155006_data/Peritoneal_cells_Aged"
+  Peritoneal_cells_Young: "/home/user/PanChongshi/Lab/WYD/scATAC/GSE155006_data/Peritoneal_cells_Young"
+  Spleen_Aged: "/home/user/PanChongshi/Lab/WYD/scATAC/GSE155006_data/Spleen_Aged"
+  Spleen_Young: "/home/user/PanChongshi/Lab/WYD/scATAC/GSE155006_data/Spleen_Young"
+
+# ------------------------------------------------------------------------------
+# 2. 样本元数据 (Sample Metadata)
+# ------------------------------------------------------------------------------
+sample_metadata:
+  Liver_Aged:
+    tissue: "Liver"
+    age: "Aged"
+  Liver_Young:
+    tissue: "Liver"
+    age: "Young"
+  Lung_Aged:
+    tissue: "Lung"
+    age: "Aged"
+  Lung_Young:
+    tissue: "Lung"
+    age: "Young"
+  Peritoneal_cells_Aged:
+    tissue: "Peritoneal_cells"
+    age: "Aged"
+  Peritoneal_cells_Young:
+    tissue: "Peritoneal_cells"
+    age: "Young"
+  Spleen_Aged:
+    tissue: "Spleen"
+    age: "Aged"
+  Spleen_Young:
+    tissue: "Spleen"
+    age: "Young"
+
+# ------------------------------------------------------------------------------
+# 3. 输出目录配置 (Output Directories)
+# ------------------------------------------------------------------------------
+directories:
+  raw_h5ad: "/home/user/PanChongshi/Lab/WYD/scATAC/GSE155006_results/data/single_sample_raw"
+  qc_h5ad: "/home/user/PanChongshi/Lab/WYD/scATAC/GSE155006_results/data/single_sample_qc"
+  merged: "/home/user/PanChongshi/Lab/WYD/scATAC/GSE155006_results/data/merged"
+  plots: "/home/user/PanChongshi/Lab/WYD/scATAC/GSE155006_results/plots"
+  tables: "/home/user/PanChongshi/Lab/WYD/scATAC/GSE155006_results/tables"
+  logs: "/home/user/PanChongshi/Lab/WYD/scATAC/GSE155006_results/logs"
+  report: "/home/user/PanChongshi/Lab/WYD/scATAC/GSE155006_results/report"
+  optimization: "/home/user/PanChongshi/Lab/WYD/scATAC/GSE155006_results/optimization"
+
+# ------------------------------------------------------------------------------
+# 4. 过滤参数 (Filtering)
+# ------------------------------------------------------------------------------
+filtering:
+  min_genes: 200
+  max_mt_pct: 10.0
+  min_cells_per_gene: 3
+  doublet_rate: 0.06
+  sim_doublet_ratio: 2.0
+  n_prin_comps: 30
+
+# ------------------------------------------------------------------------------
+# 5. 基因模式匹配 (Gene Patterns)
+# ------------------------------------------------------------------------------
+gene_patterns:
+  mt: "^MT-"
+  rp: "^RP[SL]"
+  ncrna: "^[A-Z][A-Z][0-9].*\\.[0-9]"
+  linc: "(^LOC|LINC)[1-9]*"
+
+# ------------------------------------------------------------------------------
+# 6. 分析处理参数 (Processing)
+# ------------------------------------------------------------------------------
+# 注意：resolution 和 n_neighbors 由 04_clustering_optimization.py 自动优化
+processing:
+  n_top_genes: 2000
+  harmony_key: "sample"
+  target_sum: 10000
+  scale_max_value: 10.0
+
+# ------------------------------------------------------------------------------
+# 7. 聚类参数优化 (Optimization)
+# ------------------------------------------------------------------------------
+optimization:
+  resolutions: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0, 1.2, 1.5]
+  n_neighbors_list: [5, 10, 15, 20, 30]
+  skip_neighbors_test: false
+
+# ------------------------------------------------------------------------------
+# 8. 差异基因分析参数 (Find Markers)
+# ------------------------------------------------------------------------------
+find_markers:
+  groupby: "leiden"
+  method: "wilcoxon"
+  n_genes: 20
+  n_genes_plot: 5
